@@ -62,3 +62,9 @@ Cập nhật Site URL sang `https://sagsdieuhanh-gif.github.io/SAGSCXR-RNS/` khi
 - Link mời chứa token một lần, có thời hạn. Không lưu link lên server/browser storage, không đưa vào log, không chia sẻ lên nhóm. Chỉ gửi riêng đúng email.
 - Luồng mời nhân viên mới từ BAOCAOMANAGERONDUTY/Radar đã đổi redirect khỏi Vercel cũ sang `https://sagsdieuhanh-gif.github.io/SAGSCXR-RNS/secure.html` (Edge Function `sagscxr-radar-register` V3).
 - Để email **tự động** đến mọi địa chỉ cần kiểm tra **Supabase → Authentication → SMTP Settings** và nhật ký của nhà cung cấp SMTP; xác minh Sender, SPF/DKIM/DMARC và tình trạng bounce/suppression. Không dùng thao tác tạo link để khẳng định SMTP đã được sửa.
+
+## Tạo tài khoản trực tiếp trong RNS và Manager (31/10/2026)
+- ADMIN RNS mở **QUẢN LÝ TÀI KHOẢN → TẠO TÀI KHOẢN TRỰC TIẾP**, nhập email, họ tên, quyền RNS VIEWER/EDITOR, quyền Manager. Quản trị viên phải đồng thời là ADMIN Manager mới cấp được quyền nghiệp vụ Manager.
+- Edge Function `sagscxr-rns-manage` action `create` tạo duy nhất 01 tài khoản Supabase Auth và ghi cả `sags_docs_members` lẫn `ops_members`.
+- Không cấp ADMIN trong form tạo nhanh, không tự ghi đè tài khoản trùng email; tạo quyền thất bại sẽ rollback user mới nếu có thể và thông báo kiểm tra trước khi thử lại.
+- Mật khẩu tạm 20 ký tự sinh trên máy chủ, chỉ hiện một lần cho ADMIN, không lưu bản rõ trên database hay thiết bị. Nhân viên đăng nhập RNS đổi mật khẩu bắt buộc trước khi sử dụng Manager.
