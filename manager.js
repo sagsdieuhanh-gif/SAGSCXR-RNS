@@ -2,11 +2,11 @@ export default async function manage(R){
  const {el,esc,fmt,note,edge,shell}=R;
  const screen=shell("manage","Quản lý <em>tài khoản</em>","Cấp quyền VIEWER, gửi email mời và đặt lại mật khẩu an toàn cho nhân viên.");
  screen.innerHTML='<div class="stats"><div class="stat"><label>TỔNG TÀI KHOẢN</label><strong id="m-total">—</strong></div><div class="stat"><label>ADMIN</label><strong id="m-admin">—</strong></div><div class="stat"><label>VIEWER ĐANG DÙNG</label><strong id="m-viewer">—</strong></div><div class="stat"><label>CHỜ XÁC MINH</label><strong id="m-pending">—</strong></div></div>'+
- '<div class="columns"><div class="stack"><section class="card"><h2>Mời nhân viên mới</h2><form id="m-invite" class="form"><label>Email nhân viên</label><input type="email" id="m-email" required placeholder="nhanvien@example.com"><button class="btn primary" type="submit">GỬI EMAIL MỜI</button><div id="m-invite-info"></div></form><p class="hint">Nhân viên nhận email mời, tạo mật khẩu, sau đó ADMIN kích hoạt quyền truy cập.</p></section><section class="card"><h2>Tìm tài khoản</h2><div class="form"><input id="m-search" class="search" type="search" placeholder="Tìm theo email hoặc tên nhân viên"><select id="m-filter"><option value="">TẤT CẢ</option><option value="active">ĐANG HOẠT ĐỘNG</option><option value="pending">CHỜ XÁC MINH</option><option value="inactive">ĐÃ KHÓA</option></select><button class="btn" id="m-refresh">↻ LÀM MỚI</button></div></section></div>'+
+ '<div class="columns"><div class="stack"><section class="card"><h2>Mời nhân viên mới</h2><form id="m-invite" class="form"><label>Email nhân viên</label><input type="email" id="m-email" required placeholder="nhanvien@example.com"><button class="btn primary" id="m-invite-send" type="submit">GỬI EMAIL MỜI QUA SUPABASE</button><div id="m-invite-info"></div></form><p class="hint">Dịch vụ Supabase chỉ xác nhận đã tiếp nhận yêu cầu, không xác nhận thư đã vào Inbox. Nếu không nhận được, sử dụng LINK MỜI để gửi riêng bằng email/Zalo.</p></section><section class="card"><h2>Tìm tài khoản</h2><div class="form"><input id="m-search" class="search" type="search" placeholder="Tìm theo email hoặc tên nhân viên"><select id="m-filter"><option value="">TẤT CẢ</option><option value="active">ĐANG HOẠT ĐỘNG</option><option value="pending">CHỜ XÁC MINH</option><option value="inactive">ĐÃ KHÓA</option></select><button class="btn" id="m-refresh">↻ LÀM MỚI</button></div></section></div>'+
  '<section class="card"><div class="inline"><h2>Danh sách nhân viên</h2><span class="badge push" id="m-showing">—</span></div><div id="m-list"></div></section></div>'+
- '<div id="m-link-modal" class="overlay" hidden><div class="modal"><div class="inline"><h2>LIÊN KẾT MỜI NHÂN VIÊN</h2><button class="btn sm push" id="m-link-close">ĐÓNG ×</button></div><p class="hint" id="m-link-user"></p><div class="notice">Liên kết này thay email mời và chứa mã đăng nhập một lần. Chỉ gửi riêng cho đúng nhân viên qua Zalo hoặc kênh cá nhân đáng tin cậy. Không đăng lên nhóm chung.</div><div class="form"><label>LINK XÁC MINH & TẠO MẬT KHẨU</label><textarea id="m-link-url" readonly rows="4" autocomplete="off" spellcheck="false"></textarea><button class="btn primary full" id="m-link-copy" type="button">SAO CHÉP LINK MỜI</button></div><p id="m-link-note" class="hint">Mã chỉ hiển thị trong cửa sổ này và có thời hạn.</p></div></div>'+
+ '<div id="m-link-modal" class="overlay" hidden><div class="modal"><div class="inline"><h2>LIÊN KẾT MỜI NHÂN VIÊN</h2><button class="btn sm push" id="m-link-close">ĐÓNG ×</button></div><p class="hint" id="m-link-user"></p><div class="notice">Liên kết này thay email mời và chứa mã đăng nhập một lần. Chỉ gửi riêng cho đúng nhân viên qua Zalo hoặc kênh cá nhân đáng tin cậy. Không đăng lên nhóm chung.</div><div class="form"><label>LINK XÁC MINH & TẠO MẬT KHẨU</label><textarea id="m-link-url" readonly rows="4" autocomplete="off" spellcheck="false"></textarea><button class="btn primary full" id="m-link-copy" type="button">SAO CHÉP LINK MỜI</button><button class="btn full" id="m-link-email" type="button">✉ MỞ EMAIL ĐỂ GỬI LINK MỜI</button></div><p id="m-link-note" class="hint">Mã chỉ hiển thị trong cửa sổ này và có thời hạn.</p></div></div>'+
  '<div id="m-modal" class="overlay" hidden><div class="modal"><div class="inline"><h2>ĐẶT LẠI MẬT KHẨU</h2><button class="btn sm push" id="m-close">ĐÓNG ×</button></div><p class="hint" id="m-user"></p><div class="divider"></div><p class="hint">Chọn một phương án. Hệ thống luôn yêu cầu xác nhận trước khi thực hiện.</p><div class="doc"><span class="icon">✉</span><div class="details"><strong>Gửi email đặt lại mật khẩu</strong><small>Nhân viên tự đặt mật khẩu mới theo liên kết nhận được.</small></div><button class="btn sm" id="m-email-reset">GỬI EMAIL</button></div><div class="doc"><span class="icon">🔑</span><div class="details"><strong>Cấp mật khẩu tạm</strong><small>Tạo mã ngẫu nhiên một lần; nhân viên phải đổi sau đăng nhập.</small></div><button class="btn primary sm" id="m-temp-reset">CẤP MÃ</button></div><div id="m-secret-box" hidden><label>MẬT KHẨU TẠM (CHỈ HIỂN THỊ MỘT LẦN)</label><div class="inline"><input id="m-secret" type="text" readonly><button id="m-copy" class="btn">SAO CHÉP</button></div><p class="hint">Gửi mã riêng cho đúng nhân viên, không gửi vào nhóm công khai.</p></div><div id="m-feedback"></div></div></div>';
- let users=[],target=null,acting=false;
+ let users=[],target=null,acting=false,invitePending=false;
  const list=el("m-list");
  function stats(){
   el("m-total").textContent=users.length;
@@ -46,6 +46,7 @@ export default async function manage(R){
   el("m-link-url").value="";
   el("m-link-user").textContent="";
   el("m-link-note").textContent="";
+  el("m-link-email").disabled=true;
   el("m-link-modal").hidden=true;
  }
  async function makeInviteLink(id){
@@ -59,6 +60,7 @@ export default async function manage(R){
    if(!data.action_link||!data.action_link.startsWith("https://"))throw Error("Máy chủ không cung cấp link an toàn.");
    el("m-link-user").textContent=u.email;
    el("m-link-url").value=data.action_link;
+   el("m-link-email").disabled=false;
    el("m-link-note").textContent="Chỉ gửi riêng cho nhân viên. Link có thời hạn và có thể bị vô hiệu khi tạo link mới.";
    el("m-link-modal").hidden=false;
   }catch(err){alert("Không tạo được link mời: "+err.message);}
@@ -82,9 +84,29 @@ export default async function manage(R){
   finally{acting=false;el("m-email-reset").disabled=false;el("m-temp-reset").disabled=false;}
  }
  el("m-invite").onsubmit=async e=>{
-  e.preventDefault();const email=el("m-email").value.trim();if(!confirm("GỬI LỜI MỜI CHO\n"+email+"?"))return;
-  try{await edge("manage","invite",{email});el("m-invite-info").innerHTML=note("Supabase đã tiếp nhận yêu cầu gửi thư mời cho "+email+". Việc phát thư tới Inbox chưa được bảo đảm. Nếu nhân viên không nhận được, tìm tài khoản đang CHỜ XÁC MINH và bấm LẤY LINK MỜI.","ok");el("m-email").value="";await load();}
-  catch(err){el("m-invite-info").innerHTML=note(err.message,"fail");}
+  e.preventDefault();
+  if(invitePending)return;
+  const email=el("m-email").value.trim().toLowerCase();
+  if(!confirm("YÊU CẦU SUPABASE GỬI EMAIL MỜI CHO\n"+email+"?\n\nĐây là yêu cầu gửi, không phải xác nhận thư đã đến hộp thư."))return;
+  invitePending=true;
+  el("m-invite-send").disabled=true;
+  el("m-invite-info").innerHTML=note("Đang tạo tài khoản và yêu cầu chuyển email…");
+  try{
+   const result=await edge("manage","invite",{email});
+   await load();
+   const recipient=users.find(u=>u.email?.toLowerCase()===email&&!u.email_confirmed_at&&u.invited_at);
+   el("m-invite-info").innerHTML=
+    note("Supabase đã TIẾP NHẬN yêu cầu mời "+email+
+     ". Chưa có xác nhận email đã đến Inbox/Spam; nếu người nhận chưa thấy thư, hãy dùng liên kết bảo mật bên dưới.","ok")+
+    (recipient?'<button class="btn primary" type="button" id="m-invite-get-link">LẤY LINK MỜI ĐỂ GỬI QUA EMAIL / ZALO</button>':
+     '<p class="hint">Tìm tài khoản trong danh sách CHỜ XÁC MINH và chọn LẤY LINK MỜI.</p>');
+   const b=el("m-invite-get-link");
+   if(b)b.onclick=()=>makeInviteLink(recipient.id);
+   el("m-email").value="";
+  }catch(err){
+   el("m-invite-info").innerHTML=note("CHƯA XÁC NHẬN GỬI ĐƯỢC: "+err.message+
+    ". Nếu có tài khoản đang CHỜ XÁC MINH, hãy dùng LẤY LINK MỜI. Không thử gửi liên tục.","fail");
+  }finally{invitePending=false;el("m-invite-send").disabled=false;}
  };
  el("m-search").oninput=render;el("m-filter").onchange=render;
  el("m-refresh").onclick=()=>load().catch(err=>alert(err.message));
@@ -95,6 +117,17 @@ export default async function manage(R){
   const text=el("m-link-url").value;if(!text)return;
   try{await navigator.clipboard.writeText(text);el("m-link-note").textContent="✓ Đã sao chép. Chỉ gửi link cho đúng người nhận qua tin nhắn riêng."; }
   catch{el("m-link-url").focus();el("m-link-url").select();el("m-link-note").textContent="Vui lòng sao chép link đang bôi đen.";}
+ };
+ el("m-link-email").onclick=()=>{
+  const url=el("m-link-url").value.trim(),email=el("m-link-user").textContent.trim();
+  if(!url||!/^https:\/\//i.test(url)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return;
+  if(!confirm("MỞ ỨNG DỤNG EMAIL ĐỂ GỬI LINK CHO\n"+email+"?\n\nLiên kết chứa mã bảo mật một lần; chỉ gửi riêng cho đúng nhân viên."))return;
+  const subject="SAGS-CXR | Thư mời kích hoạt tài khoản RNS";
+  const body="Xin chào,\n\nBạn được mời kích hoạt tài khoản SAGSCXR-RNS.\nMở liên kết bảo mật bên dưới để xác minh email và đặt mật khẩu:\n"+url+
+  "\n\nLiên kết chỉ dành cho người nhận, có thời hạn và không được chuyển tiếp.\n\nSAGS-CXR";
+  const mailto="mailto:"+encodeURIComponent(email)+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
+  window.location.href=mailto;
+  el("m-link-note").textContent="Đã mở ứng dụng email (nếu thiết bị hỗ trợ). Kiểm tra đúng người nhận và bấm GỬI trong ứng dụng email. Hệ thống không tự gửi thư từ nút này.";
  };
  el("m-email-reset").onclick=()=>reset("email_reset");
  el("m-temp-reset").onclick=()=>reset("temp_reset");
