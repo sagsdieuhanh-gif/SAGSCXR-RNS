@@ -54,3 +54,11 @@ Cập nhật Site URL sang `https://sagsdieuhanh-gif.github.io/SAGSCXR-RNS/` khi
 - Cần xác nhận trong Supabase Dashboard **Authentication → URL Configuration**: `Site URL` bằng `https://sagsdieuhanh-gif.github.io/SAGSCXR-RNS/`, `Redirect URLs` có `https://sagsdieuhanh-gif.github.io/SAGSCXR-RNS/secure.html` và `https://sagsdieuhanh-gif.github.io/SAGSCXR-RNS/index.html`.
 - Email mời trước đây trỏ về Vercel không tự chuyển địa chỉ: ADMIN phải gửi lại email mời/tạo mật khẩu cho các tài khoản còn chờ xác minh sau khi cập nhật Redirect URLs. Không chia sẻ nguyên đường dẫn mời có token.
 - Mã HTML/CSS/JS của bản GitHub là bản frontend độc lập đã được viết lại; cần kiểm thử đầy đủ các quy trình với tài khoản được cấp quyền trước khi bỏ hẳn phương án dự phòng.
+
+## Cập nhật 31/10/2026 – Email mời không đến Inbox
+- Nút **GỬI EMAIL MỜI QUA SUPABASE** chỉ phản ánh việc Auth tiếp nhận yêu cầu, không phải xác nhận thư đã phát/giao đến hộp thư.
+- Khi đã tạo lời mời, trên giao diện hiển thị ngay nút **LẤY LINK MỜI ĐỂ GỬI QUA EMAIL / ZALO** cho tài khoản CHỜ XÁC MINH.
+- Cửa sổ LINK MỜI bổ sung nút **MỞ EMAIL ĐỂ GỬI LINK MỜI**. Nút này tạo bản nháp trong ứng dụng email mặc định (mailto:); ADMIN phải tự kiểm tra người nhận và bấm GỬI. Không được mô tả là email đã tự động gửi.
+- Link mời chứa token một lần, có thời hạn. Không lưu link lên server/browser storage, không đưa vào log, không chia sẻ lên nhóm. Chỉ gửi riêng đúng email.
+- Luồng mời nhân viên mới từ BAOCAOMANAGERONDUTY/Radar đã đổi redirect khỏi Vercel cũ sang `https://sagsdieuhanh-gif.github.io/SAGSCXR-RNS/secure.html` (Edge Function `sagscxr-radar-register` V3).
+- Để email **tự động** đến mọi địa chỉ cần kiểm tra **Supabase → Authentication → SMTP Settings** và nhật ký của nhà cung cấp SMTP; xác minh Sender, SPF/DKIM/DMARC và tình trạng bounce/suppression. Không dùng thao tác tạo link để khẳng định SMTP đã được sửa.
