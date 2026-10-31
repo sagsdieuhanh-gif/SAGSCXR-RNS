@@ -111,6 +111,12 @@ async function start(){
 async function init(){
  try{
   const hash=new URLSearchParams(location.hash.slice(1));
+  const emailError=hash.get("error_code")||hash.get("error");
+  if(emailError){
+   history.replaceState(null,"",location.pathname);
+   login(/expired|invalid|otp/i.test(emailError)?"Liên kết xác nhận hoặc đặt lại mật khẩu đã hết hạn/không hợp lệ. Vui lòng liên hệ ADMIN để được gửi lại email mới từ GitHub Pages.":"Xác thực qua email không thành công. Vui lòng liên hệ ADMIN để được gửi lại email từ hệ thống mới.");
+   return;
+  }
   if(hash.has("access_token")&&hash.has("refresh_token")&&["invite","recovery"].includes(hash.get("type"))){
    session={access_token:hash.get("access_token"),refresh_token:hash.get("refresh_token"),email:""};
    sessionStorage.setItem(STORAGE,JSON.stringify(session));

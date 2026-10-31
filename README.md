@@ -36,3 +36,12 @@ Cập nhật Site URL sang `https://sagsdieuhanh-gif.github.io/SAGSCXR-RNS/` khi
 - Bắt buộc đổi mật khẩu khi đăng nhập nếu ADMIN cấp mật khẩu tạm.
 
 **Lưu ý:** Đây là frontend thay thế viết lại theo API Supabase hiện tại vì bản triển khai Vercel bị khóa (`DEPLOYMENT_DISABLED`). Cần kiểm thử nghiệp vụ và quyền truy cập trên GitHub Pages trước khi cho toàn bộ nhân viên sử dụng.
+
+## Chuyển hẳn URL hoạt động sang GitHub Pages (31/10/2026)
+
+- Website production: https://sagsdieuhanh-gif.github.io/SAGSCXR-RNS/ (đã kiểm tra trang chính và secure.html tải thành công).
+- Toàn bộ giao diện đang phục vụ từ GitHub Pages; không phụ thuộc runtime Vercel. GitHub Pages chỉ lưu file tĩnh, không lưu thông tin đăng nhập.
+- Supabase Auth là nơi quản lý tài khoản, gửi email mời, phiên đăng nhập và quyền truy cập; Supabase Database lưu metadata nghiệp vụ/READ & SIGN; Google Drive tiếp tục lưu tệp gốc. Các thao tác cần bí mật Google hoặc quyền quản trị dùng Supabase Edge Functions đã triển khai sẵn (không được đưa service role key ra JavaScript công khai).
+- Cần xác nhận trong Supabase Dashboard **Authentication → URL Configuration**: `Site URL` bằng `https://sagsdieuhanh-gif.github.io/SAGSCXR-RNS/`, `Redirect URLs` có `https://sagsdieuhanh-gif.github.io/SAGSCXR-RNS/secure.html` và `https://sagsdieuhanh-gif.github.io/SAGSCXR-RNS/index.html`.
+- Email mời trước đây trỏ về Vercel không tự chuyển địa chỉ: ADMIN phải gửi lại email mời/tạo mật khẩu cho các tài khoản còn chờ xác minh sau khi cập nhật Redirect URLs. Không chia sẻ nguyên đường dẫn mời có token.
+- Mã HTML/CSS/JS của bản GitHub là bản frontend độc lập đã được viết lại; cần kiểm thử đầy đủ các quy trình với tài khoản được cấp quyền trước khi bỏ hẳn phương án dự phòng.
