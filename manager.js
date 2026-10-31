@@ -2,11 +2,24 @@ export default async function manage(R){
  const {el,esc,fmt,note,edge,shell}=R;
  const screen=shell("manage","Quản lý <em>tài khoản</em>","Cấp quyền VIEWER, gửi email mời và đặt lại mật khẩu an toàn cho nhân viên.");
  screen.innerHTML='<div class="stats"><div class="stat"><label>TỔNG TÀI KHOẢN</label><strong id="m-total">—</strong></div><div class="stat"><label>ADMIN</label><strong id="m-admin">—</strong></div><div class="stat"><label>VIEWER ĐANG DÙNG</label><strong id="m-viewer">—</strong></div><div class="stat"><label>CHỜ XÁC MINH</label><strong id="m-pending">—</strong></div></div>'+
- '<div class="columns"><div class="stack"><section class="card"><h2>Mời nhân viên mới</h2><form id="m-invite" class="form"><label>Email nhân viên</label><input type="email" id="m-email" required placeholder="nhanvien@example.com"><button class="btn primary" id="m-invite-send" type="submit">GỬI EMAIL MỜI QUA SUPABASE</button><div id="m-invite-info"></div></form><p class="hint">Dịch vụ Supabase chỉ xác nhận đã tiếp nhận yêu cầu, không xác nhận thư đã vào Inbox. Nếu không nhận được, sử dụng LINK MỜI để gửi riêng bằng email/Zalo.</p></section><section class="card"><h2>Tìm tài khoản</h2><div class="form"><input id="m-search" class="search" type="search" placeholder="Tìm theo email hoặc tên nhân viên"><select id="m-filter"><option value="">TẤT CẢ</option><option value="active">ĐANG HOẠT ĐỘNG</option><option value="pending">CHỜ XÁC MINH</option><option value="inactive">ĐÃ KHÓA</option></select><button class="btn" id="m-refresh">↻ LÀM MỚI</button></div></section></div>'+
+ '<div class="columns"><div class="stack"><section class="card"><h2>Tạo tài khoản trực tiếp · Dùng chung Manager/RNS</h2>'+
+ '<p class="hint">ADMIN nhập thông tin nhân viên và cấp quyền ngay khi tạo. Mật khẩu tạm chỉ hiện một lần; nhân viên bắt buộc đổi tại RNS trước khi dùng Manager.</p>'+
+ '<form id="m-create" class="form"><label>Email nhân viên</label><input type="email" id="m-create-email" required autocomplete="off" maxlength="254" placeholder="nhanvien@congty.com">'+
+ '<label>Họ tên nhân viên</label><input id="m-create-name" autocomplete="off" required maxlength="120" placeholder="Họ và tên">'+
+ '<label>Quyền RNS</label><select id="m-create-rns"><option value="viewer">VIEWER</option><option value="editor">EDITOR</option></select>'+
+ '<label>Quyền Manager</label><select id="m-create-manager"><option value="VIEWER">CHỈ XEM</option><option value="DH">ĐIỀU HÀNH</option><option value="KTS">PVSĐ</option><option value="PVHK">PVHK</option><option value="KHO">KHO HÀNG</option><option value="QA">QA</option><option value="IT">IT</option></select>'+
+ '<p class="hint">Quyền nghiệp vụ Manager chỉ được cấp nếu người tạo cũng là ADMIN Manager. Không cho tạo ADMIN.</p>'+
+ '<label><input type="checkbox" id="m-create-verified"> Tôi xác nhận email thuộc về nhân viên này</label>'+
+ '<button class="btn primary" id="m-create-submit" type="submit">TẠO TÀI KHOẢN & PHÂN QUYỀN</button></form><div id="m-create-info"></div>'+
+ '<div id="m-create-secret-box" class="notice" hidden><strong>ĐÃ TẠO – BÀN GIAO RIÊNG MẬT KHẨU TẠM</strong><p id="m-create-user"></p>'+
+ '<label>Mật khẩu tạm</label><input id="m-create-secret" type="text" readonly autocomplete="off" spellcheck="false">'+
+ '<div class="inline"><button type="button" class="btn" id="m-create-copy">SAO CHÉP</button><button type="button" class="btn" id="m-create-dismiss">ĐÃ BÀN GIAO / ẨN</button></div>'+
+ '<p class="hint">Nhân viên đăng nhập RNS bằng mật khẩu tạm và đổi ngay. Sau đó sử dụng chung email/mật khẩu mới tại Manager.</p></div></section>'+
+ '<section class="card"><h2>Mời nhân viên mới (tùy chọn)</h2><form id="m-invite" class="form"><label>Email nhân viên</label><input type="email" id="m-email" required placeholder="nhanvien@example.com"><button class="btn primary" id="m-invite-send" type="submit">GỬI EMAIL MỜI QUA SUPABASE</button><div id="m-invite-info"></div></form><p class="hint">Dịch vụ Supabase chỉ xác nhận đã tiếp nhận yêu cầu, không xác nhận thư đã vào Inbox. Nếu không nhận được, sử dụng LINK MỜI để gửi riêng bằng email/Zalo.</p></section><section class="card"><h2>Tìm tài khoản</h2><div class="form"><input id="m-search" class="search" type="search" placeholder="Tìm theo email hoặc tên nhân viên"><select id="m-filter"><option value="">TẤT CẢ</option><option value="active">ĐANG HOẠT ĐỘNG</option><option value="pending">CHỜ XÁC MINH</option><option value="inactive">ĐÃ KHÓA</option></select><button class="btn" id="m-refresh">↻ LÀM MỚI</button></div></section></div>'+
  '<section class="card"><div class="inline"><h2>Danh sách nhân viên</h2><span class="badge push" id="m-showing">—</span></div><div id="m-list"></div></section></div>'+
  '<div id="m-link-modal" class="overlay" hidden><div class="modal"><div class="inline"><h2>LIÊN KẾT MỜI NHÂN VIÊN</h2><button class="btn sm push" id="m-link-close">ĐÓNG ×</button></div><p class="hint" id="m-link-user"></p><div class="notice">Liên kết này thay email mời và chứa mã đăng nhập một lần. Chỉ gửi riêng cho đúng nhân viên qua Zalo hoặc kênh cá nhân đáng tin cậy. Không đăng lên nhóm chung.</div><div class="form"><label>LINK XÁC MINH & TẠO MẬT KHẨU</label><textarea id="m-link-url" readonly rows="4" autocomplete="off" spellcheck="false"></textarea><button class="btn primary full" id="m-link-copy" type="button">SAO CHÉP LINK MỜI</button><button class="btn full" id="m-link-email" type="button">✉ MỞ EMAIL ĐỂ GỬI LINK MỜI</button></div><p id="m-link-note" class="hint">Mã chỉ hiển thị trong cửa sổ này và có thời hạn.</p></div></div>'+
  '<div id="m-modal" class="overlay" hidden><div class="modal"><div class="inline"><h2>ĐẶT LẠI MẬT KHẨU</h2><button class="btn sm push" id="m-close">ĐÓNG ×</button></div><p class="hint" id="m-user"></p><div class="divider"></div><p class="hint">Chọn một phương án. Hệ thống luôn yêu cầu xác nhận trước khi thực hiện.</p><div class="doc"><span class="icon">✉</span><div class="details"><strong>Gửi email đặt lại mật khẩu</strong><small>Nhân viên tự đặt mật khẩu mới theo liên kết nhận được.</small></div><button class="btn sm" id="m-email-reset">GỬI EMAIL</button></div><div class="doc"><span class="icon">🔑</span><div class="details"><strong>Cấp mật khẩu tạm</strong><small>Tạo mã ngẫu nhiên một lần; nhân viên phải đổi sau đăng nhập.</small></div><button class="btn primary sm" id="m-temp-reset">CẤP MÃ</button></div><div id="m-secret-box" hidden><label>MẬT KHẨU TẠM (CHỈ HIỂN THỊ MỘT LẦN)</label><div class="inline"><input id="m-secret" type="text" readonly><button id="m-copy" class="btn">SAO CHÉP</button></div><p class="hint">Gửi mã riêng cho đúng nhân viên, không gửi vào nhóm công khai.</p></div><div id="m-feedback"></div></div></div>';
- let users=[],target=null,acting=false,invitePending=false;
+ let users=[],target=null,acting=false,invitePending=false,creating=false;
  const list=el("m-list");
  function stats(){
   el("m-total").textContent=users.length;
@@ -83,6 +96,46 @@ export default async function manage(R){
   }catch(err){el("m-feedback").innerHTML=note("Thao tác không thành công: "+err.message,"fail");}
   finally{acting=false;el("m-email-reset").disabled=false;el("m-temp-reset").disabled=false;}
  }
+
+ function clearCreatedSecret(){
+  el("m-create-secret").value="";
+  el("m-create-user").textContent="";
+  el("m-create-secret-box").hidden=true;
+ }
+ el("m-create").onsubmit=async e=>{
+  e.preventDefault();
+  if(creating)return;
+  const email=el("m-create-email").value.trim().toLowerCase();
+  const display_name=el("m-create-name").value.trim();
+  const rns_role=el("m-create-rns").value;
+  const manager_unit=el("m-create-manager").value;
+  if(!email||!display_name)return;
+  if(!el("m-create-verified").checked){
+   el("m-create-info").innerHTML=note("Kiểm tra và xác nhận email nhân viên trước khi tạo.","fail");return;
+  }
+  if(!confirm("ĐĂNG KÝ TÀI KHOẢN CHUNG RNS / MANAGER?\nEmail: "+email+"\nQuyền RNS: "+rns_role+
+    "\nQuyền Manager: "+manager_unit+"\n\nMật khẩu tạm chỉ xuất hiện một lần."))return;
+  creating=true;el("m-create-submit").disabled=true;clearCreatedSecret();
+  el("m-create-info").innerHTML=note("Đang tạo tài khoản và lưu hai bộ quyền…");
+  try{
+   const result=await edge("manage","create",{email,display_name,rns_role,manager_unit,email_verified_by_admin:true});
+   if(!result.temporary_password)throw Error("Chưa nhận được mật khẩu tạm; kiểm tra danh sách tài khoản trước khi thử lại.");
+   el("m-create-secret").value=result.temporary_password;
+   el("m-create-user").textContent=result.email+" · RNS: "+result.rns_role.toUpperCase()+" · Manager: "+result.manager_unit;
+   el("m-create-secret-box").hidden=false;
+   el("m-create-info").innerHTML=note("ĐÃ TẠO VÀ CẤP QUYỀN. Chuyển mật khẩu tạm riêng cho đúng nhân viên.","ok");
+   el("m-create-email").value="";el("m-create-name").value="";el("m-create-verified").checked=false;
+   await load();
+  }catch(error){el("m-create-info").innerHTML=note("CHƯA TẠO ĐƯỢC: "+error.message,"fail");}
+  finally{creating=false;el("m-create-submit").disabled=false;}
+ };
+ el("m-create-copy").onclick=async()=>{
+  const input=el("m-create-secret");if(!input.value)return;
+  try{await navigator.clipboard.writeText(input.value);
+   el("m-create-info").innerHTML=note("Đã sao chép mật khẩu tạm. Chỉ chuyển riêng cho đúng nhân viên.","ok");
+  }catch{input.select();el("m-create-info").innerHTML=note("Vui lòng sao chép phần mật khẩu đã bôi đen.","ok");}
+ };
+ el("m-create-dismiss").onclick=clearCreatedSecret;
  el("m-invite").onsubmit=async e=>{
   e.preventDefault();
   if(invitePending)return;
