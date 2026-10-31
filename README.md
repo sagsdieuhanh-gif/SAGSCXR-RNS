@@ -25,6 +25,17 @@ Trong **Supabase → Authentication → URL Configuration**, bổ sung Redirect 
 
 Cập nhật Site URL sang `https://sagsdieuhanh-gif.github.io/SAGSCXR-RNS/` khi chuyển hẳn hệ thống sang GitHub Pages. Điều này quan trọng với email mời và đặt lại mật khẩu.
 
+## Hướng dẫn xử lý khi nhân viên không nhận được email mời
+
+- Vào **QUẢN LÝ TÀI KHOẢN**, chọn bộ lọc **CHỜ XÁC MINH**.
+- Tìm đúng email đã gửi thư mời và bấm **LẤY LINK MỜI**.
+- Xác nhận, sao chép đường dẫn xác minh và **chỉ gửi riêng** cho người nhận qua tin nhắn cá nhân (ví dụ Zalo). Không đăng lên nhóm chung, công khai hay ghi vào tài liệu.
+- Nhân viên mở link để xác minh và tạo mật khẩu trên GitHub Pages; ADMIN tiếp tục **KÍCH HOẠT** tài khoản sau khi nhân viên hoàn tất xác minh.
+- Đường dẫn là mã bảo mật có thời hạn; khi bị lộ, cần tạo mã khác. Không lưu link vào hệ thống hay gửi link qua nhóm.
+- Nếu chức năng LẤY LINK MỜI bị lỗi, không lặp lại quá nhiều lần; kiểm tra nhật ký Supabase Edge Function `sagscxr-rns-manage` và trạng thái tài khoản.
+- Nút **GỬI EMAIL MỜI** chỉ xác nhận Supabase đã tiếp nhận yêu cầu. Trạng thái thành công không chứng minh email đã đến Inbox; kiểm tra cả Spam và Promotions.
+- SMTP đang dùng Gmail cá nhân, có thể ảnh hưởng độ tin cậy phát thư. Muốn có gửi email ổn định cho nhân viên cần cấu hình một dịch vụ SMTP giao dịch chuyên dụng và xác thực miền gửi (SPF/DKIM/DMARC nếu dùng miền riêng).
+
 ## Nghiệp vụ chính
 
 - Thư viện văn bản, tra cứu theo hãng / năm, liên kết Google Drive.
