@@ -26,6 +26,7 @@ jobs:
           node --check app.js
           node --check library.js
           node --check manager.js
+          node tests/direct-registration.test.cjs
           node --check readsign.js
           test -s index.html
           test -s secure.html
