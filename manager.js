@@ -4,6 +4,7 @@ export default async function manage(R){
  screen.innerHTML='<div class="stats"><div class="stat"><label>TỔNG TÀI KHOẢN</label><strong id="m-total">—</strong></div><div class="stat"><label>ADMIN</label><strong id="m-admin">—</strong></div><div class="stat"><label>VIEWER ĐANG DÙNG</label><strong id="m-viewer">—</strong></div><div class="stat"><label>CHỜ XÁC MINH</label><strong id="m-pending">—</strong></div></div>'+
  '<div class="columns"><div class="stack"><section class="card"><h2>Mời nhân viên mới</h2><form id="m-invite" class="form"><label>Email nhân viên</label><input type="email" id="m-email" required placeholder="nhanvien@example.com"><button class="btn primary" type="submit">GỬI EMAIL MỜI</button><div id="m-invite-info"></div></form><p class="hint">Nhân viên nhận email mời, tạo mật khẩu, sau đó ADMIN kích hoạt quyền truy cập.</p></section><section class="card"><h2>Tìm tài khoản</h2><div class="form"><input id="m-search" class="search" type="search" placeholder="Tìm theo email hoặc tên nhân viên"><select id="m-filter"><option value="">TẤT CẢ</option><option value="active">ĐANG HOẠT ĐỘNG</option><option value="pending">CHỜ XÁC MINH</option><option value="inactive">ĐÃ KHÓA</option></select><button class="btn" id="m-refresh">↻ LÀM MỚI</button></div></section></div>'+
  '<section class="card"><div class="inline"><h2>Danh sách nhân viên</h2><span class="badge push" id="m-showing">—</span></div><div id="m-list"></div></section></div>'+
+ '<div id="m-link-modal" class="overlay" hidden><div class="modal"><div class="inline"><h2>LIÊN KẾT MỜI NHÂN VIÊN</h2><button class="btn sm push" id="m-link-close">ĐÓNG ×</button></div><p class="hint" id="m-link-user"></p><div class="notice">Liên kết này thay email mời và chứa mã đăng nhập một lần. Chỉ gửi riêng cho đúng nhân viên qua Zalo hoặc kênh cá nhân đáng tin cậy. Không đăng lên nhóm chung.</div><div class="form"><label>LINK XÁC MINH & TẠO MẬT KHẨU</label><textarea id="m-link-url" readonly rows="4" autocomplete="off" spellcheck="false"></textarea><button class="btn primary full" id="m-link-copy" type="button">SAO CHÉP LINK MỜI</button></div><p id="m-link-note" class="hint">Mã chỉ hiển thị trong cửa sổ này và có thời hạn.</p></div></div>'+
  '<div id="m-modal" class="overlay" hidden><div class="modal"><div class="inline"><h2>ĐẶT LẠI MẬT KHẨU</h2><button class="btn sm push" id="m-close">ĐÓNG ×</button></div><p class="hint" id="m-user"></p><div class="divider"></div><p class="hint">Chọn một phương án. Hệ thống luôn yêu cầu xác nhận trước khi thực hiện.</p><div class="doc"><span class="icon">✉</span><div class="details"><strong>Gửi email đặt lại mật khẩu</strong><small>Nhân viên tự đặt mật khẩu mới theo liên kết nhận được.</small></div><button class="btn sm" id="m-email-reset">GỬI EMAIL</button></div><div class="doc"><span class="icon">🔑</span><div class="details"><strong>Cấp mật khẩu tạm</strong><small>Tạo mã ngẫu nhiên một lần; nhân viên phải đổi sau đăng nhập.</small></div><button class="btn primary sm" id="m-temp-reset">CẤP MÃ</button></div><div id="m-secret-box" hidden><label>MẬT KHẨU TẠM (CHỈ HIỂN THỊ MỘT LẦN)</label><div class="inline"><input id="m-secret" type="text" readonly><button id="m-copy" class="btn">SAO CHÉP</button></div><p class="hint">Gửi mã riêng cho đúng nhân viên, không gửi vào nhóm công khai.</p></div><div id="m-feedback"></div></div></div>';
  let users=[],target=null,acting=false;
  const list=el("m-list");
@@ -20,12 +21,14 @@ export default async function manage(R){
   list.innerHTML=matches.length?matches.map(u=>{
    const state=!u.email_confirmed_at?'<span class="badge warn">CHƯA XÁC MINH</span>':u.active?'<span class="badge ok">ĐANG HOẠT ĐỘNG</span>':'<span class="badge fail">ĐÃ KHÓA</span>';
    return '<div class="item"><div><strong>'+esc(u.email)+'</strong><small>'+esc(u.display_name||"")+' · '+esc((u.role||"CHƯA CẤP").toUpperCase())+' · '+esc(fmt(u.last_sign_in_at))+'</small><div style="margin-top:8px">'+state+'</div></div><div class="inline">'+
+    (!u.email_confirmed_at&&u.invited_at?'<button class="btn primary sm" data-link="'+esc(u.id)+'">LẤY LINK MỜI</button>':'')+
     (u.email_confirmed_at&&u.role!=="admin"?'<button class="btn sm" data-access="'+esc(u.id)+'">'+(u.active?"KHÓA":"KÍCH HOẠT")+'</button>':'')+
     (u.email_confirmed_at&&u.active&&u.role==="viewer"?'<button class="btn sm" data-reset="'+esc(u.id)+'">ĐẶT LẠI MẬT KHẨU</button>':'')+
     '</div></div>';
   }).join(""):'<div class="empty">Không có tài khoản phù hợp.</div>';
   list.querySelectorAll("[data-access]").forEach(b=>b.onclick=()=>setAccess(b.dataset.access));
   list.querySelectorAll("[data-reset]").forEach(b=>b.onclick=()=>openModal(b.dataset.reset));
+  list.querySelectorAll("[data-link]").forEach(b=>b.onclick=()=>makeInviteLink(b.dataset.link));
  }
  async function load(){
   const result=await edge("manage","list");users=result.users||[];stats();render();
@@ -36,6 +39,30 @@ export default async function manage(R){
   if(!confirm((value?"KÍCH HOẠT":"KHÓA")+" TÀI KHOẢN?\n\n"+u.email))return;
   try{await edge("manage","set_access",{user_id:u.id,active:value});await load();}
   catch(err){alert("Không thể cập nhật: "+err.message);}
+ }
+ let linkPending=false;
+ function closeInviteLink(){
+  if(linkPending)return;
+  el("m-link-url").value="";
+  el("m-link-user").textContent="";
+  el("m-link-note").textContent="";
+  el("m-link-modal").hidden=true;
+ }
+ async function makeInviteLink(id){
+  if(linkPending)return;
+  const u=users.find(x=>x.id===id);
+  if(!u||u.email_confirmed_at||!u.invited_at)return;
+  if(!confirm("TẠO LINK MỜI BẢO MẬT CHO\\n"+u.email+"?\\n\\nChỉ chuyển link cho đúng nhân viên; link chứa mã xác nhận đăng ký."))return;
+  linkPending=true;
+  try{
+   const data=await edge("manage","invite_link",{user_id:u.id});
+   if(!data.action_link||!data.action_link.startsWith("https://"))throw Error("Máy chủ không cung cấp link an toàn.");
+   el("m-link-user").textContent=u.email;
+   el("m-link-url").value=data.action_link;
+   el("m-link-note").textContent="Chỉ gửi riêng cho nhân viên. Link có thời hạn và có thể bị vô hiệu khi tạo link mới.";
+   el("m-link-modal").hidden=false;
+  }catch(err){alert("Không tạo được link mời: "+err.message);}
+  finally{linkPending=false;}
  }
  function openModal(id){
   target=users.find(x=>x.id===id);if(!target)return;
@@ -56,12 +83,19 @@ export default async function manage(R){
  }
  el("m-invite").onsubmit=async e=>{
   e.preventDefault();const email=el("m-email").value.trim();if(!confirm("GỬI LỜI MỜI CHO\n"+email+"?"))return;
-  try{await edge("manage","invite",{email});el("m-invite-info").innerHTML=note("Đã gửi yêu cầu mời tài khoản "+email,"ok");el("m-email").value="";await load();}
+  try{await edge("manage","invite",{email});el("m-invite-info").innerHTML=note("Supabase đã tiếp nhận yêu cầu gửi thư mời cho "+email+". Việc phát thư tới Inbox chưa được bảo đảm. Nếu nhân viên không nhận được, tìm tài khoản đang CHỜ XÁC MINH và bấm LẤY LINK MỜI.","ok");el("m-email").value="";await load();}
   catch(err){el("m-invite-info").innerHTML=note(err.message,"fail");}
  };
  el("m-search").oninput=render;el("m-filter").onchange=render;
  el("m-refresh").onclick=()=>load().catch(err=>alert(err.message));
  el("m-close").onclick=closeModal;
+ el("m-link-close").onclick=closeInviteLink;
+ el("m-link-modal").onclick=e=>{if(e.target===el("m-link-modal"))closeInviteLink();};
+ el("m-link-copy").onclick=async()=>{
+  const text=el("m-link-url").value;if(!text)return;
+  try{await navigator.clipboard.writeText(text);el("m-link-note").textContent="✓ Đã sao chép. Chỉ gửi link cho đúng người nhận qua tin nhắn riêng."; }
+  catch{el("m-link-url").focus();el("m-link-url").select();el("m-link-note").textContent="Vui lòng sao chép link đang bôi đen.";}
+ };
  el("m-email-reset").onclick=()=>reset("email_reset");
  el("m-temp-reset").onclick=()=>reset("temp_reset");
  el("m-modal").onclick=e=>{if(e.target===el("m-modal"))closeModal();};
