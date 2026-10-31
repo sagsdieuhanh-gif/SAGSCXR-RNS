@@ -1,34 +1,28 @@
-name: Publish SAGSCXR-RNS (GitHub Pages)
+name: Validate SAGSCXR-RNS (GitHub Pages)
 
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: sagscxr-rns-pages
-  cancel-in-progress: false
 
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
+      - name: Checkout source
         uses: actions/checkout@v4
-      - name: Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Validate static application
         run: |
+          set -e
           node --check app.js
           node --check library.js
           node --check manager.js
@@ -38,19 +32,3 @@ jobs:
           test -s manage.html
           test -s read-sign.html
           test -s app.css
-      - name: Prepare site
-        run: |
-          mkdir -p _site
-          cp index.html secure.html manage.html read-sign.html app.css app.js library.js manager.js readsign.js _site/
-          touch _site/.nojekyll
-      - name: Enable and configure GitHub Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - name: Upload pages
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: _site
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4

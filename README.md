@@ -9,14 +9,12 @@ Website dự kiến: https://sagsdieuhanh-gif.github.io/SAGSCXR-RNS/
 - Lưu trữ văn bản và tệp: Google Drive; metadata và READ & SIGN nằm tại Supabase.
 - Không đưa service role key, Google OAuth client secret, mật khẩu hoặc dữ liệu hồ sơ vào repository công khai.
 
-## Kích hoạt GitHub Pages lần đầu
+## Phát hành GitHub Pages
 
-1. Vào **Settings → Pages** của repository.
-2. Trong **Build and deployment → Source**, chọn **GitHub Actions** và lưu.
-3. Mở **Actions → Publish SAGSCXR-RNS (GitHub Pages)** và chọn **Re-run jobs** nếu lượt đầu tiên lỗi vì Pages chưa được bật.
-4. Chỉ dùng website sau khi workflow hoàn tất thành công và địa chỉ GitHub Pages trả mã HTTP 200.
-
-Workflow tại `.github/workflows/pages.yml` kiểm tra cú pháp JavaScript và phát hành frontend.
+- Repo đã có GitHub Pages hoạt động; publish từ `main` / `(root)` bằng cơ chế build tự động của GitHub Pages.
+- `.github/workflows/pages.yml` chỉ kiểm tra cú pháp và tệp bắt buộc, không triển khai lần hai.
+- Trong **Settings → Pages**, chọn **Deploy from a branch**, `main`, `/(root)` nếu cấu hình bị thay đổi.
+- Xác minh bằng URL GitHub Pages chính thức sau khi GitHub báo build/deployment thành công.
 
 ## URL cấu hình Supabase Authentication
 
