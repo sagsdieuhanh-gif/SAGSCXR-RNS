@@ -103,7 +103,7 @@ async function start(){
   member=rows[0]||null;
   if(!member?.active)throw Error("Tài khoản chưa được ADMIN kích hoạt.");
   if(page==="manage"&&!admin()){root.innerHTML=note("Chỉ ADMIN được truy cập Quản lý tài khoản.","fail")+'<a href="index.html">← QUAY LẠI</a>';return;}
-  if(page==="manage")await import("./manager.js?v=gh1").then(m=>m.default(window.RNS));
+  if(page==="manage")await import("./manager.js?v=gh3-invite").then(m=>m.default(window.RNS));
   else if(page==="read-sign")await import("./readsign.js?v=gh1").then(m=>m.default(window.RNS));
   else await import("./library.js?v=gh1").then(m=>m.default(window.RNS));
  }catch(e){clean();login(failMessage(e));}
