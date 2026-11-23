@@ -6,7 +6,9 @@ export default async function manage(R){
  '<p class="hint">ADMIN nhập thông tin nhân viên và cấp quyền ngay khi tạo. Mật khẩu tạm chỉ hiện một lần; nhân viên bắt buộc đổi tại RNS trước khi dùng Manager.</p>'+
  '<form id="m-create" class="form"><label>Email nhân viên</label><input type="email" id="m-create-email" required autocomplete="off" maxlength="254" placeholder="nhanvien@congty.com">'+
  '<label>Họ tên nhân viên</label><input id="m-create-name" autocomplete="off" required maxlength="120" placeholder="Họ và tên">'+
+ '<label class="check"><input type="checkbox" id="m-create-rns-access"> Cho phép vào RNS (Văn bản / READ & SIGN)</label>'+
  '<label>Quyền RNS</label><select id="m-create-rns"><option value="viewer">VIEWER</option><option value="editor">EDITOR</option></select>'+
+ '<label class="check"><input type="checkbox" id="m-create-manager-access"> Cho phép vào Báo cáo khai thác ngày</label>'+
  '<label>Quyền Manager</label><select id="m-create-manager"><option value="VIEWER">CHỈ XEM</option><option value="DH">ĐIỀU HÀNH</option><option value="KTS">PVSĐ</option><option value="PVHK">PVHK</option><option value="KHO">KHO HÀNG</option><option value="QA">QA</option><option value="IT">IT</option></select>'+
  '<p class="hint">Quyền nghiệp vụ Manager chỉ được cấp nếu người tạo cũng là ADMIN Manager. Không cho tạo ADMIN.</p>'+
  '<label><input type="checkbox" id="m-create-verified"> Tôi xác nhận email thuộc về nhân viên này</label>'+
@@ -102,6 +104,9 @@ export default async function manage(R){
   el("m-create-user").textContent="";
   el("m-create-secret-box").hidden=true;
  }
+ el("m-create-rns").disabled=true;el("m-create-manager").disabled=true;
+ el("m-create-rns-access").onchange=()=>el("m-create-rns").disabled=!el("m-create-rns-access").checked;
+ el("m-create-manager-access").onchange=()=>el("m-create-manager").disabled=!el("m-create-manager-access").checked;
  el("m-create").onsubmit=async e=>{
   e.preventDefault();
   if(creating)return;
@@ -109,22 +114,24 @@ export default async function manage(R){
   const display_name=el("m-create-name").value.trim();
   const rns_role=el("m-create-rns").value;
   const manager_unit=el("m-create-manager").value;
+  const rns_access=el("m-create-rns-access").checked,manager_access=el("m-create-manager-access").checked;
+  if(!rns_access&&!manager_access){el("m-create-info").innerHTML=note("Phải chọn quyền ít nhất một ứng dụng.","fail");return;}
   if(!email||!display_name)return;
   if(!el("m-create-verified").checked){
    el("m-create-info").innerHTML=note("Kiểm tra và xác nhận email nhân viên trước khi tạo.","fail");return;
   }
-  if(!confirm("ĐĂNG KÝ TÀI KHOẢN CHUNG RNS / MANAGER?\nEmail: "+email+"\nQuyền RNS: "+rns_role+
-    "\nQuyền Manager: "+manager_unit+"\n\nMật khẩu tạm chỉ xuất hiện một lần."))return;
+  if(!confirm("ĐĂNG KÝ TÀI KHOẢN CHUNG?\nEmail: "+email+"\nQuyền RNS: "+(rns_access?rns_role:"KHÔNG CẤP")+
+    "\nQuyền Manager: "+(manager_access?manager_unit:"KHÔNG CẤP")+"\n\nMật khẩu tạm chỉ xuất hiện một lần."))return;
   creating=true;el("m-create-submit").disabled=true;clearCreatedSecret();
   el("m-create-info").innerHTML=note("Đang tạo tài khoản và lưu hai bộ quyền…");
   try{
-   const result=await edge("manage","create",{email,display_name,rns_role,manager_unit,email_verified_by_admin:true});
+   const result=await edge("manage","create",{email,display_name,rns_role,manager_unit,rns_access,manager_access,email_verified_by_admin:true});
    if(!result.temporary_password)throw Error("Chưa nhận được mật khẩu tạm; kiểm tra danh sách tài khoản trước khi thử lại.");
    el("m-create-secret").value=result.temporary_password;
-   el("m-create-user").textContent=result.email+" · RNS: "+result.rns_role.toUpperCase()+" · Manager: "+result.manager_unit;
+   el("m-create-user").textContent=result.email+" · RNS: "+(result.rns_access?result.rns_role.toUpperCase():"KHÔNG CẤP")+" · Báo cáo: "+(result.manager_access?result.manager_unit:"KHÔNG CẤP");
    el("m-create-secret-box").hidden=false;
    el("m-create-info").innerHTML=note("ĐÃ TẠO VÀ CẤP QUYỀN. Chuyển mật khẩu tạm riêng cho đúng nhân viên.","ok");
-   el("m-create-email").value="";el("m-create-name").value="";el("m-create-verified").checked=false;
+   el("m-create-email").value="";el("m-create-name").value="";el("m-create-verified").checked=false;el("m-create-rns-access").checked=false;el("m-create-manager-access").checked=false;
    await load();
   }catch(error){el("m-create-info").innerHTML=note("CHƯA TẠO ĐƯỢC: "+error.message,"fail");}
   finally{creating=false;el("m-create-submit").disabled=false;}
