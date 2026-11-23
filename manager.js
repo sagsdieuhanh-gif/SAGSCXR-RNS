@@ -41,16 +41,26 @@ export default async function manage(R){
  }
  function render(){
   const q=R.normal(el("m-search").value),f=el("m-filter").value;
-  const matches=users.filter(u=>(!q||R.normal((u.email||"")+" "+(u.display_name||"")).includes(q))&&(!f||f==="active"&&u.email_confirmed_at&&u.active||f==="pending"&&!u.email_confirmed_at||f==="inactive"&&u.email_confirmed_at&&!u.active));
+  const matches=users.filter(u=>{
+   const allowAny=u.active===true||(sharedAllowed&&sharedUsers.get(u.id)?.radar_active===true);
+   return (!q||R.normal((u.email||"")+" "+(u.display_name||"")).includes(q))&&
+     (!f||f==="active"&&u.email_confirmed_at&&allowAny||
+       f==="pending"&&!u.email_confirmed_at||
+       f==="inactive"&&u.email_confirmed_at&&!allowAny);
+  });
   el("m-showing").textContent=matches.length+" / "+users.length;
   list.innerHTML=matches.length?matches.map(u=>{
-   const state=!u.email_confirmed_at?'<span class="badge warn">CHƯA XÁC MINH</span>':u.active?'<span class="badge ok">ĐANG HOẠT ĐỘNG</span>':'<span class="badge fail">ĐÃ KHÓA</span>';
+   const related=sharedUsers.get(u.id);
+   const state=!u.email_confirmed_at?'<span class="badge warn">CHƯA XÁC MINH</span>':
+     sharedAllowed?'<span class="badge '+(u.active?"ok":"fail")+'">RNS: '+(u.active?"CHO PHÉP":"KHÓA")+'</span> '+
+       '<span class="badge '+(related?.radar_active?"ok":"fail")+'">BÁO CÁO: '+(related?.radar_active?"CHO PHÉP":"KHÓA")+'</span>':
+       u.active?'<span class="badge ok">RNS ĐANG HOẠT ĐỘNG</span>':'<span class="badge fail">RNS ĐÃ KHÓA</span>';
    return '<div class="item"><div><strong>'+esc(u.email)+'</strong><small>'+esc(u.display_name||"")+' · '+esc((u.role||"CHƯA CẤP").toUpperCase())+' · '+esc(fmt(u.last_sign_in_at))+'</small><div style="margin-top:8px">'+state+'</div></div><div class="inline">'+
     (!u.email_confirmed_at&&u.invited_at?'<button class="btn primary sm" data-link="'+esc(u.id)+'">LẤY LINK MỜI</button>':'')+
     (sharedAllowed&&u.role!=="admin"&&sharedUsers.get(u.id)?.radar_unit!=="ADMIN"?
       '<button class="btn sm" data-app-rights="'+esc(u.id)+'">QUYỀN 2 ỨNG DỤNG</button>'+
       '<button class="btn red sm" data-global-delete="'+esc(u.id)+'">XÓA TÀI KHOẢN</button>':'')+
-    (u.email_confirmed_at&&u.role!=="admin"?'<button class="btn sm" data-access="'+esc(u.id)+'">'+(u.active?"KHÓA":"KÍCH HOẠT")+'</button>':'')+
+    (u.email_confirmed_at&&u.role!=="admin"?'<button class="btn sm" data-access="'+esc(u.id)+'">'+(u.active?"KHÓA RNS":"MỞ RNS")+'</button>':'')+
     (u.email_confirmed_at&&u.active&&u.role==="viewer"?'<button class="btn sm" data-reset="'+esc(u.id)+'">ĐẶT LẠI MẬT KHẨU</button>':'')+
     '</div></div>';
   }).join(""):'<div class="empty">Không có tài khoản phù hợp.</div>';
@@ -142,7 +152,7 @@ export default async function manage(R){
  async function setAccess(id){
   const u=users.find(x=>x.id===id);if(!u)return;
   const value=!u.active;
-  if(!confirm((value?"KÍCH HOẠT":"KHÓA")+" TÀI KHOẢN?\n\n"+u.email))return;
+  if(!confirm((value?"MỞ QUYỀN RNS":"KHÓA QUYỀN RNS")+"?\n\n"+u.email+"\n\nKhông thay đổi quyền Báo cáo khai thác ngày."))return;
   try{await edge("manage","set_access",{user_id:u.id,active:value});await load();}
   catch(err){alert("Không thể cập nhật: "+err.message);}
  }
