@@ -18,9 +18,19 @@ export default async function library(R){
  });
  function drawList(){
   const all=filters(),items=all.slice(0,state.shown);el("result-count").textContent="Hiển thị "+items.length+" / "+all.length+" văn bản phù hợp";
-  el("doc-list").innerHTML=items.length?items.map(d=>'<button class="selectable '+(d.drive_file_id===state.selected?'active':'')+'" data-document="'+esc(d.drive_file_id)+'"><strong>'+esc(d.title)+'</strong><small>'+esc(d.group_code)+" · "+esc(d.folder_year)+" · "+esc(type(d).toUpperCase())+'</small></button>').join(""):'<div class="empty">Không tìm thấy văn bản phù hợp.</div>';
+  el("doc-list").innerHTML=items.length?items.map(d=>'<a class="selectable '+(d.drive_file_id===state.selected?'active':'')+'" data-document="'+esc(d.drive_file_id)+'" href="'+esc(safeUrl(d.drive_url))+'" target="_blank" rel="noopener noreferrer" aria-label="Mở văn bản: '+esc(d.title)+'"><strong>'+esc(d.title)+'</strong><small>'+esc(d.group_code)+" · "+esc(d.folder_year)+" · "+esc(type(d).toUpperCase())+'</small></a>').join(""):'<div class="empty">Không tìm thấy văn bản phù hợp.</div>';
   el("more").hidden=items.length===all.length;
-  el("doc-list").querySelectorAll("[data-document]").forEach(b=>b.onclick=()=>choose(b.dataset.document));
+  el("doc-list").querySelectorAll("[data-document]").forEach(b=>b.onclick=event=>{
+   const id=b.dataset.document;
+   const onMobile=window.matchMedia("(max-width: 900px)").matches;
+   if(onMobile&&b.getAttribute("href")!=="#"){
+    // Let the native link open the document immediately before updating the selected item.
+    window.setTimeout(()=>{if(el("doc-list"))void choose(id);},0);
+    return;
+   }
+   event.preventDefault();
+   void choose(id,onMobile);
+  });
  }
  function renderStats(){
   el("cnt-total").textContent=state.docs.length.toLocaleString("vi-VN");
@@ -47,7 +57,7 @@ export default async function library(R){
    el("upload-form").onsubmit=upload;
   }
  }
- async function choose(id){state.selected=id;state.attachments=[];renderDetails();drawList();try{await attachments();}catch(e){el("attachment-list").innerHTML=note("Không tải được tệp: "+e.message,"fail");}}
+ async function choose(id,reveal=false){state.selected=id;state.attachments=[];renderDetails();drawList();if(reveal)el("doc-detail").scrollIntoView({behavior:"smooth",block:"start"});try{await attachments();}catch(e){const a=el("attachment-list");if(a)a.innerHTML=note("Không tải được tệp: "+e.message,"fail");}}
  async function removeAttachment(id){
   const a=state.attachments.find(x=>x.id===id);if(!a)return;
   if(!confirm("XÁC NHẬN XÓA TỆP ĐÍNH KÈM?\n\n"+a.title+"\n\nTệp chuyển vào Thùng rác Google Drive; văn bản gốc giữ nguyên."))return;
