@@ -60,7 +60,33 @@ function shell(active,title,sub){
 function login(msg=""){
  root.innerHTML='<div class="auth"><section class="card"><small class="badge">BẢO MẬT TÀI KHOẢN</small><h1>Đăng nhập SAGSCXR-RNS</h1><p>Đăng nhập bằng tài khoản được ADMIN cấp. Dữ liệu nghiệp vụ được bảo vệ bởi Supabase.</p>'+
  '<form id="login" class="form"><label>Email tài khoản</label><input type="email" id="email" autocomplete="username" required placeholder="nhanvien@example.com"><label>Mật khẩu</label><input type="password" id="password" autocomplete="current-password" required><button type="submit" class="btn primary full" id="login-btn">ĐĂNG NHẬP</button><div id="login-info">'+(msg?note(msg,"fail"):"")+'</div></form>'+
- '<p class="hint">Quên mật khẩu? Liên hệ ADMIN để nhận email đặt lại hoặc mật khẩu tạm.</p></section></div>';
+ '<div class="inline" style="margin-top:16px"><button type="button" id="forgot-toggle" class="btn">QUÊN MẬT KHẨU?</button></div>'+
+ '<form id="forgot-form" class="form" hidden style="margin-top:14px;padding-top:14px;border-top:1px solid #dae9ee"><label>Email nhận liên kết khôi phục</label><input type="email" id="recover-email" autocomplete="email" placeholder="Nhập email tài khoản" required><button type="submit" id="recover-submit" class="btn primary full">GỬI EMAIL ĐẶT LẠI MẬT KHẨU</button><div id="recover-info" aria-live="polite"></div><p class="hint">Kiểm tra Hộp thư đến, Spam và Quảng cáo. Chỉ mở liên kết mới nhất. Email sẽ đưa anh/chị về trang SAGSCXR-RNS trên GitHub Pages.</p></form></section></div>';
+ el("forgot-toggle").onclick=()=>{
+  const form=el("forgot-form");
+  form.hidden=!form.hidden;
+  if(!form.hidden){
+    el("recover-email").value=el("email").value.trim()||"";
+    el("recover-email").focus();
+  }
+ };
+ el("forgot-form").onsubmit=async event=>{
+  event.preventDefault();
+  const address=el("recover-email").value.trim().toLowerCase();
+  if(!address)return;
+  const btn=el("recover-submit");btn.disabled=true;
+  el("recover-info").innerHTML=note("Đang gửi yêu cầu khôi phục...");
+  try{
+   const redirect="https://sagsdieuhanh-gif.github.io/SAGSCXR-RNS/secure.html";
+   await request("/auth/v1/recover?redirect_to="+encodeURIComponent(redirect),{
+    method:"POST",needAuth:false,body:{email:address}
+   });
+   el("recover-info").innerHTML=note("Supabase đã tiếp nhận yêu cầu. Nếu email có trong hệ thống, hãy kiểm tra hộp thư và mở liên kết mới nhất để đặt mật khẩu.","ok");
+  }catch(e){
+   const msg=failMessage(e);
+   el("recover-info").innerHTML=note(/rate|limit|429/i.test(msg)?"Hệ thống đang giới hạn số email gửi. Vui lòng thử lại sau.":msg,"fail");
+  }finally{btn.disabled=false;}
+ };
  el("login").onsubmit=async event=>{
   event.preventDefault();el("login-btn").disabled=true;
   try{
