@@ -131,7 +131,7 @@ async function start(){
   if(page==="manage"&&!admin()){root.innerHTML=note("Chỉ ADMIN được truy cập Quản lý tài khoản.","fail")+'<a href="index.html">← QUAY LẠI</a>';return;}
   if(page==="manage")await import("./manager.js?v=gh5-independent-access").then(m=>m.default(window.RNS));
   else if(page==="read-sign")await import("./readsign.js?v=gh1").then(m=>m.default(window.RNS));
-  else await import("./library.js?v=gh1").then(m=>m.default(window.RNS));
+  else await import("./library.js?v=gh2-mobile-direct-open").then(m=>m.default(window.RNS));
  }catch(e){clean();login(failMessage(e));}
 }
 async function init(){
