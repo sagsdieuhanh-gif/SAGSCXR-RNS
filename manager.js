@@ -21,7 +21,17 @@ export default async function manage(R){
  '<section class="card"><div class="inline"><h2>Danh sách nhân viên</h2><span class="badge push" id="m-showing">—</span></div><div id="m-list"></div></section></div>'+
  '<div id="m-link-modal" class="overlay" hidden><div class="modal"><div class="inline"><h2>LIÊN KẾT MỜI NHÂN VIÊN</h2><button class="btn sm push" id="m-link-close">ĐÓNG ×</button></div><p class="hint" id="m-link-user"></p><div class="notice">Liên kết này thay email mời và chứa mã đăng nhập một lần. Chỉ gửi riêng cho đúng nhân viên qua Zalo hoặc kênh cá nhân đáng tin cậy. Không đăng lên nhóm chung.</div><div class="form"><label>LINK XÁC MINH & TẠO MẬT KHẨU</label><textarea id="m-link-url" readonly rows="4" autocomplete="off" spellcheck="false"></textarea><button class="btn primary full" id="m-link-copy" type="button">SAO CHÉP LINK MỜI</button><button class="btn full" id="m-link-email" type="button">✉ MỞ EMAIL ĐỂ GỬI LINK MỜI</button></div><p id="m-link-note" class="hint">Mã chỉ hiển thị trong cửa sổ này và có thời hạn.</p></div></div>'+
  '<div id="m-modal" class="overlay" hidden><div class="modal"><div class="inline"><h2>ĐẶT LẠI MẬT KHẨU</h2><button class="btn sm push" id="m-close">ĐÓNG ×</button></div><p class="hint" id="m-user"></p><div class="divider"></div><p class="hint">Chọn một phương án. Hệ thống luôn yêu cầu xác nhận trước khi thực hiện.</p><div class="doc"><span class="icon">✉</span><div class="details"><strong>Gửi email đặt lại mật khẩu</strong><small>Nhân viên tự đặt mật khẩu mới theo liên kết nhận được.</small></div><button class="btn sm" id="m-email-reset">GỬI EMAIL</button></div><div class="doc"><span class="icon">🔑</span><div class="details"><strong>Cấp mật khẩu tạm</strong><small>Tạo mã ngẫu nhiên một lần; nhân viên phải đổi sau đăng nhập.</small></div><button class="btn primary sm" id="m-temp-reset">CẤP MÃ</button></div><div id="m-secret-box" hidden><label>MẬT KHẨU TẠM (CHỈ HIỂN THỊ MỘT LẦN)</label><div class="inline"><input id="m-secret" type="text" readonly><button id="m-copy" class="btn">SAO CHÉP</button></div><p class="hint">Gửi mã riêng cho đúng nhân viên, không gửi vào nhóm công khai.</p></div><div id="m-feedback"></div></div></div>';
+ screen.insertAdjacentHTML("beforeend",'<div id="m-app-modal" class="overlay" hidden><div class="modal">'+
+ '<div class="inline"><h2>PHÂN QUYỀN 2 ỨNG DỤNG</h2><button id="m-app-close" class="btn sm push">ĐÓNG ×</button></div>'+
+ '<p class="hint" id="m-app-user"></p><p class="hint">Hai quyền hoạt động độc lập. Bỏ chọn ứng dụng nào sẽ thu hồi quyền truy cập ứng dụng đó, không xóa tài khoản.</p>'+
+ '<div class="form"><label class="check"><input type="checkbox" id="m-app-rns"> CHO PHÉP VÀO RNS</label>'+
+ '<select id="m-app-rns-role"><option value="viewer">VIEWER</option><option value="editor">EDITOR</option></select>'+
+ '<label class="check"><input type="checkbox" id="m-app-manager"> CHO PHÉP VÀO BÁO CÁO KHAI THÁC NGÀY</label>'+
+ '<select id="m-app-manager-unit"><option value="VIEWER">CHỈ XEM</option><option value="DH">ĐIỀU HÀNH</option><option value="KTS">PVSĐ</option><option value="PVHK">PVHK</option><option value="KHO">KHO HÀNG</option><option value="QA">QA</option><option value="IT">IT</option></select>'+
+ '<button id="m-app-save" class="btn primary full">LƯU PHÂN QUYỀN</button><button id="m-app-revoke" class="btn red full">THU HỒI QUYỀN CẢ HAI ỨNG DỤNG</button>'+
+ '<div id="m-app-status" class="hint" role="status"></div></div></div></div>');
  let users=[],target=null,acting=false,invitePending=false,creating=false;
+ let sharedUsers=new Map(),sharedAllowed=false,sharedTarget=null,sharedBusy=false;
  const list=el("m-list");
  function stats(){
   el("m-total").textContent=users.length;
@@ -37,17 +47,98 @@ export default async function manage(R){
    const state=!u.email_confirmed_at?'<span class="badge warn">CHƯA XÁC MINH</span>':u.active?'<span class="badge ok">ĐANG HOẠT ĐỘNG</span>':'<span class="badge fail">ĐÃ KHÓA</span>';
    return '<div class="item"><div><strong>'+esc(u.email)+'</strong><small>'+esc(u.display_name||"")+' · '+esc((u.role||"CHƯA CẤP").toUpperCase())+' · '+esc(fmt(u.last_sign_in_at))+'</small><div style="margin-top:8px">'+state+'</div></div><div class="inline">'+
     (!u.email_confirmed_at&&u.invited_at?'<button class="btn primary sm" data-link="'+esc(u.id)+'">LẤY LINK MỜI</button>':'')+
+    (sharedAllowed&&u.role!=="admin"&&sharedUsers.get(u.id)?.radar_unit!=="ADMIN"?
+      '<button class="btn sm" data-app-rights="'+esc(u.id)+'">QUYỀN 2 ỨNG DỤNG</button>'+
+      '<button class="btn red sm" data-global-delete="'+esc(u.id)+'">XÓA TÀI KHOẢN</button>':'')+
     (u.email_confirmed_at&&u.role!=="admin"?'<button class="btn sm" data-access="'+esc(u.id)+'">'+(u.active?"KHÓA":"KÍCH HOẠT")+'</button>':'')+
     (u.email_confirmed_at&&u.active&&u.role==="viewer"?'<button class="btn sm" data-reset="'+esc(u.id)+'">ĐẶT LẠI MẬT KHẨU</button>':'')+
     '</div></div>';
   }).join(""):'<div class="empty">Không có tài khoản phù hợp.</div>';
+  list.querySelectorAll("[data-app-rights]").forEach(b=>b.onclick=()=>openSharedAccess(b.dataset.appRights));
+  list.querySelectorAll("[data-global-delete]").forEach(b=>b.onclick=()=>deleteSharedAccount(b.dataset.globalDelete));
   list.querySelectorAll("[data-access]").forEach(b=>b.onclick=()=>setAccess(b.dataset.access));
   list.querySelectorAll("[data-reset]").forEach(b=>b.onclick=()=>openModal(b.dataset.reset));
   list.querySelectorAll("[data-link]").forEach(b=>b.onclick=()=>makeInviteLink(b.dataset.link));
  }
  async function load(){
-  const result=await edge("manage","list");users=result.users||[];stats();render();
+  const result=await edge("manage","list");users=result.users||[];
+  try{
+   const rad=await R.request("/functions/v1/sagscxr-radar-register",{method:"POST",body:{action:"list"}});
+   sharedUsers=new Map((rad.users||[]).map(u=>[u.id,u]));
+   sharedAllowed=rad.success===true;
+  }catch{sharedAllowed=false;sharedUsers=new Map();}
+  stats();render();
  }
+ async function sharedRequest(action,values){
+  return await R.request("/functions/v1/sagscxr-radar-register",{
+   method:"POST",body:{action,...values}
+  });
+ }
+ function toggleShared(){
+  el("m-app-rns-role").disabled=!el("m-app-rns").checked;
+  el("m-app-manager-unit").disabled=!el("m-app-manager").checked;
+ }
+ function closeShared(){
+  if(sharedBusy)return;
+  sharedTarget=null;el("m-app-modal").hidden=true;
+ }
+ function openSharedAccess(id){
+  if(!sharedAllowed)return;
+  const u=users.find(u=>u.id===id),x=sharedUsers.get(id);
+  if(!u||u.role==="admin"||x?.radar_unit==="ADMIN")return;
+  sharedTarget=id;
+  el("m-app-user").textContent=u.email;
+  el("m-app-rns").checked=u.active===true;
+  el("m-app-rns-role").value=["viewer","editor"].includes(u.role)?u.role:"viewer";
+  el("m-app-manager").checked=x?.radar_active===true;
+  el("m-app-manager-unit").value=x?.radar_unit&&x.radar_unit!=="ADMIN"?x.radar_unit:"VIEWER";
+  el("m-app-status").textContent="";toggleShared();el("m-app-modal").hidden=false;
+ }
+ async function saveSharedAccess(forceRevoke=false){
+  if(sharedBusy||!sharedTarget)return;
+  const u=users.find(u=>u.id===sharedTarget);if(!u)return;
+  const rns=forceRevoke?false:el("m-app-rns").checked;
+  const manager=forceRevoke?false:el("m-app-manager").checked;
+  const rnsRole=el("m-app-rns-role").value,managerUnit=el("m-app-manager-unit").value;
+  if(!confirm("XÁC NHẬN PHÂN QUYỀN\\n\\n"+u.email+
+   "\\nRNS: "+(rns?rnsRole:"KHÔNG CHO PHÉP")+
+   "\\nBáo cáo khai thác: "+(manager?managerUnit:"KHÔNG CHO PHÉP")+
+   "\\n\\nMật khẩu đăng nhập chung không thay đổi."))return;
+  sharedBusy=true;el("m-app-save").disabled=true;el("m-app-revoke").disabled=true;
+  el("m-app-status").textContent="Đang cập nhật quyền...";
+  try{
+   const result=await sharedRequest("set_app_access",{user_id:u.id,confirm:true,
+    rns_active:rns,rns_role:rnsRole,manager_active:manager,manager_unit:managerUnit});
+   el("m-app-status").textContent=result.message||"Đã cập nhật quyền.";
+   await load();
+  }catch(e){el("m-app-status").textContent="Không cập nhật được: "+e.message;}
+  finally{sharedBusy=false;el("m-app-save").disabled=false;el("m-app-revoke").disabled=false;}
+ }
+ async function deleteSharedAccount(id){
+  if(!sharedAllowed||sharedBusy)return;
+  const u=users.find(u=>u.id===id),x=sharedUsers.get(id);
+  if(!u||u.role==="admin"||x?.radar_unit==="ADMIN")return;
+  const typed=prompt("XÓA TÀI KHOẢN DÙNG CHUNG CẢ HAI ỨNG DỤNG?\\n\\n"+
+   u.email+"\\n\\nHệ thống không xóa người dùng có lịch sử nghiệp vụ cần bảo toàn.\\n\\nNHẬP LẠI EMAIL ĐỂ XÁC NHẬN:");
+  if(typed===null)return;
+  if(typed.trim().toLowerCase()!==u.email.toLowerCase())return alert("Email không khớp. Chưa xóa.");
+  if(!confirm("XÁC NHẬN XÓA VĨNH VIỄN "+u.email+
+   "?\\nSau khi xóa thành công sẽ không khôi phục được tài khoản."))return;
+  sharedBusy=true;
+  try{
+   await sharedRequest("delete_account",{user_id:id,confirm:true,confirm_email:u.email});
+   await load();alert("Đã xóa tài khoản đăng nhập chung. Không thay đổi dữ liệu nghiệp vụ.");
+  }catch(e){
+   alert("KHÔNG XÓA ĐƯỢC: "+e.message+
+    "\\nNếu có lịch sử nghiệp vụ, hãy vào QUYỀN 2 ỨNG DỤNG để thu hồi quyền thay vì xóa.");
+  }finally{sharedBusy=false;}
+ }
+ el("m-app-close").onclick=closeShared;
+ el("m-app-modal").onclick=e=>{if(e.target===el("m-app-modal"))closeShared();};
+ el("m-app-rns").onchange=toggleShared;
+ el("m-app-manager").onchange=toggleShared;
+ el("m-app-save").onclick=()=>saveSharedAccess(false);
+ el("m-app-revoke").onclick=()=>saveSharedAccess(true);
  async function setAccess(id){
   const u=users.find(x=>x.id===id);if(!u)return;
   const value=!u.active;
