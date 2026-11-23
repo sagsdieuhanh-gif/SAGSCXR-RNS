@@ -36,6 +36,21 @@ Cập nhật Site URL sang `https://sagsdieuhanh-gif.github.io/SAGSCXR-RNS/` khi
 - Nút **GỬI EMAIL MỜI** chỉ xác nhận Supabase đã tiếp nhận yêu cầu. Trạng thái thành công không chứng minh email đã đến Inbox; kiểm tra cả Spam và Promotions.
 - SMTP đang dùng Gmail cá nhân, có thể ảnh hưởng độ tin cậy phát thư. Muốn có gửi email ổn định cho nhân viên cần cấu hình một dịch vụ SMTP giao dịch chuyên dụng và xác thực miền gửi (SPF/DKIM/DMARC nếu dùng miền riêng).
 
+## Phân quyền hai ứng dụng dùng chung một tài khoản — 23/11/2026
+
+- Supabase Authentication vẫn là nguồn tài khoản đăng nhập duy nhất. Mỗi nhân viên giữ chung email và mật khẩu.
+- **RNS**: `public.sags_docs_members` quản lý quyền ADMIN / EDITOR / VIEWER và trạng thái active.
+- **Báo cáo khai thác ngày / MANAGER ON DUTY**: `public.ops_members` quản lý quyền theo phòng/nhóm và trạng thái active.
+- Quyền hai ứng dụng **độc lập**: chỉ RNS, chỉ Báo cáo, cả hai hoặc không ứng dụng nào.
+- ADMIN khi tạo tài khoản trực tiếp phải chọn **cấp quyền RNS** và/hoặc **cấp quyền Báo cáo** (ít nhất một); không tự mặc định cấp cả hai. Nếu cấp quyền Báo cáo cần đồng thời có ADMIN Manager.
+- Tại **Quản lý tài khoản RNS**, khi người đăng nhập cũng là ADMIN của Báo cáo, danh sách hiển thị thêm **QUYỀN 2 ỨNG DỤNG** và **XÓA TÀI KHOẢN**.
+- Nút **QUYỀN 2 ỨNG DỤNG** mở hai công tắc độc lập và danh sách vai trò. Bấm **LƯU PHÂN QUYỀN** để áp dụng sau khi xác nhận. Có thể **THU HỒI QUYỀN CẢ HAI ỨNG DỤNG** mà không xóa tài khoản, mật khẩu hay lịch sử.
+- Nút **XÓA TÀI KHOẢN** yêu cầu nhập lại email, xác nhận lần cuối và kiểm tra lịch sử nghiệp vụ phía Supabase. Chỉ xóa vĩnh viễn khi không có tham chiếu nghiệp vụ; nếu đã có hồ sơ báo cáo, READ & SIGN hay audit thì máy chủ **không xóa**, ADMIN nên thu hồi hai quyền.
+- Chỉ người đồng thời có ADMIN trên cả hai ứng dụng được sửa hai quyền chung và xóa tài khoản. Không được xóa tài khoản ADMIN, tài khoản chính mình hoặc sửa quyền để tự nâng cấp.
+- RNS trực tiếp kiểm tra thành viên `sags_docs_members.active=true`; Báo cáo trực tiếp kiểm tra `ops_members.active=true`, có chính sách RLS của từng ứng dụng. Ẩn nút trên giao diện không thay thế kiểm tra backend.
+- Backend chung: Supabase Edge Function `sagscxr-radar-register` (hành động `set_app_access` / `delete_account`); RNS tạo tài khoản qua `sagscxr-rns-manage`. SQL kiểm tra lịch sử nằm trong repository Báo cáo ở `server/v326-shared-account-delete-check.sql`.
+- Cập nhật tính năng **không tự thêm, xóa hay thay đổi quyền hiện có** của nhân viên. Khi nâng cấp hãy tải lại trang để lấy mã JavaScript mới.
+
 ## Nghiệp vụ chính
 
 - Thư viện văn bản, tra cứu theo hãng / năm, liên kết Google Drive.
